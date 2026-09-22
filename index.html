@@ -18,34 +18,33 @@
             theme: {
                 extend: {
                     colors: {
-                        // 奶油奶茶色調 (Cream & Milk Tea Palette)
                         milktea: {
                             50: '#FAF7F2',
                             100: '#F3ECE1',
                             200: '#E6D7C3',
                             300: '#D7BEA2',
                             400: '#C5A381',
-                            500: '#B28B65', // 主奶茶棕色
+                            500: '#B28B65',
                             600: '#946E4A',
                             700: '#755335',
                             800: '#5A3E26',
                             900: '#3D2A1A',
                         },
                         cream: {
-                            50: '#FDFBF7',  // 主背景底色 (溫暖奶油白)
-                            100: '#F9F5EC', // 卡片與次要背景
-                            200: '#F1E8D9', // 柔和邊框色
+                            50: '#FDFBF7',
+                            100: '#F9F5EC',
+                            200: '#F1E8D9',
                             300: '#E4D5BE',
                             700: '#5C4E43',
-                            800: '#43372C',  // 深烤榛果主文字
-                            900: '#2C231A',  // 標題濃郁深棕
+                            800: '#43372C',
+                            900: '#2C231A',
                         },
                         caramel: {
                             50: '#FAF3EB',
                             100: '#F5E6D3',
                             200: '#EACFA8',
                             500: '#C88D51',
-                            600: '#AF753B', // 收回金額焦糖主色
+                            600: '#AF753B',
                             700: '#8F5B27',
                         }
                     },
@@ -75,6 +74,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-cream-900 text-lg leading-tight">代支費用管理</h1>
+                    <p class="text-xs text-cream-700/70 hidden sm:block">按個人匯總 ‧ 數據同步 ‧ 結欠對帳</p>
                 </div>
             </div>
 
@@ -100,7 +100,7 @@
         </div>
     </header>
 
-    <!-- Main Navigation Bar (3 Main Pages Tabs for Desktop) -->
+    <!-- Main Navigation Bar -->
     <nav class="bg-white/80 border-b border-cream-200 sticky top-16 z-20 shadow-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-around sm:justify-start sm:space-x-4">
             <button id="navBtnSummary" onclick="switchPage('summary')" class="py-3 px-4 font-bold text-sm text-milktea-600 border-b-2 border-milktea-500 transition flex items-center space-x-2">
@@ -134,16 +134,14 @@
             </div>
         </div>
 
-        <!-- PAGE 1: 結欠總覽 (Dashboard & Person Breakdown) -->
+        <!-- PAGE 1: 結欠總覽 -->
         <div id="pageSummary" class="space-y-6">
-            <!-- Main Dashboard Metrics (3 Key Cards) -->
             <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <!-- Total Expenses -->
                 <div class="bg-white rounded-2xl p-5 border border-cream-200/80 shadow-xs relative overflow-hidden">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-xs font-semibold text-cream-700/60 uppercase tracking-wider">歷史代支總額</p>
-                            <h3 id="metricTotalExpense" class="text-2xl font-bold text-cream-900 mt-1">$0</h3>
+                            <h3 id="metricTotalExpense" class="text-2xl font-bold text-cream-900 mt-1">$0.00</h3>
                         </div>
                         <div class="w-10 h-10 rounded-xl bg-milktea-50 text-milktea-600 flex items-center justify-center">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -154,12 +152,11 @@
                     </p>
                 </div>
 
-                <!-- Total Recovered -->
                 <div class="bg-white rounded-2xl p-5 border border-cream-200/80 shadow-xs relative overflow-hidden">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-xs font-semibold text-cream-700/60 uppercase tracking-wider">歷史收回總額</p>
-                            <h3 id="metricTotalRepaid" class="text-2xl font-bold text-caramel-600 mt-1">$0</h3>
+                            <h3 id="metricTotalRepaid" class="text-2xl font-bold text-caramel-600 mt-1">$0.00</h3>
                         </div>
                         <div class="w-10 h-10 rounded-xl bg-caramel-50 text-caramel-600 flex items-center justify-center">
                             <i class="fa-solid fa-arrow-down-left-to-square"></i>
@@ -170,12 +167,11 @@
                     </p>
                 </div>
 
-                <!-- Outstanding Balance (Calculated) -->
                 <div class="bg-gradient-to-br from-milktea-600 to-milktea-800 text-cream-50 rounded-2xl p-5 shadow-xs relative overflow-hidden">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-xs font-semibold text-milktea-200 uppercase tracking-wider">當前累積未結欠款</p>
-                            <h3 id="metricNetBalance" class="text-3xl font-extrabold mt-1">$0</h3>
+                            <h3 id="metricNetBalance" class="text-3xl font-extrabold mt-1">$0.00</h3>
                         </div>
                         <div class="w-10 h-10 rounded-xl bg-white/10 text-cream-50 flex items-center justify-center backdrop-blur-sm">
                             <i class="fa-solid fa-scale-balanced"></i>
@@ -187,7 +183,6 @@
                 </div>
             </section>
 
-            <!-- Scheme A: Per-Person Balance Breakdown List -->
             <section class="bg-white rounded-2xl border border-cream-200/80 shadow-xs p-5">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center space-x-2">
@@ -197,7 +192,6 @@
                     <span class="text-xs text-cream-700/60">點擊人名可快速前往明細頁面</span>
                 </div>
 
-                <!-- Person Chips / Grid Container -->
                 <div id="personSummaryGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     <div class="col-span-full text-center py-6 text-cream-700/50 text-sm">
                         尚無個人帳目記錄，請點擊下方新增第一筆代支費用。
@@ -205,7 +199,6 @@
                 </div>
             </section>
 
-            <!-- Action Buttons & Data Controls Bar -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-cream-200/80 shadow-xs">
                 <div class="flex items-center space-x-2">
                     <button onclick="openModal('addExpenseModal')" class="bg-milktea-500 hover:bg-milktea-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition flex items-center shadow-xs">
@@ -240,7 +233,6 @@
             </div>
 
             <div class="bg-white rounded-2xl border border-cream-200/80 shadow-xs p-4 space-y-4">
-                <!-- Filters Bar -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-cream-50 p-3 rounded-xl border border-cream-200/60">
                     <div>
                         <label class="block text-xs font-semibold text-cream-700 mb-1">對象篩選</label>
@@ -265,7 +257,6 @@
                     </div>
                 </div>
 
-                <!-- Expense Table -->
                 <div class="overflow-x-auto custom-scrollbar">
                     <table class="w-full text-left border-collapse min-w-[600px]">
                         <thead>
@@ -304,7 +295,6 @@
             </div>
 
             <div class="bg-white rounded-2xl border border-cream-200/80 shadow-xs p-4 space-y-4">
-                <!-- Filters Bar -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-cream-50 p-3 rounded-xl border border-cream-200/60">
                     <div>
                         <label class="block text-xs font-semibold text-cream-700 mb-1">付款人篩選</label>
@@ -318,7 +308,6 @@
                     </div>
                 </div>
 
-                <!-- Repayment Table -->
                 <div class="overflow-x-auto custom-scrollbar">
                     <table class="w-full text-left border-collapse min-w-[500px]">
                         <thead>
@@ -341,7 +330,7 @@
         </div>
     </main>
 
-    <!-- Mobile Bottom Navigation Bar (Optimized for handheld usage) -->
+    <!-- Mobile Bottom Navigation Bar -->
     <nav class="sm:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-cream-200 z-40 flex justify-around items-center h-16 shadow-lg px-2">
         <button id="mobileNavSummary" onclick="switchPage('summary')" class="flex flex-col items-center justify-center w-full h-full text-milktea-600 font-bold transition">
             <i class="fa-solid fa-chart-pie text-lg"></i>
@@ -458,21 +447,21 @@
 
             <div class="space-y-2 py-2">
                 <div class="flex items-center space-x-2">
-                    <input type="email" id="whitelistEmail1" placeholder="Email 1 (例如: user1@gmail.com)" class="flex-1 text-xs bg-cream-50 border border-cream-200 rounded-xl p-2.5 font-mono text-cream-800">
+                    <input type="email" id="whitelistEmail1" placeholder="Email 1 (例如: candicefft@gmail.com)" class="flex-1 text-xs bg-cream-50 border border-cream-200 rounded-xl p-2.5 font-mono text-cream-800">
                 </div>
                 <div class="flex items-center space-x-2">
-                    <input type="email" id="whitelistEmail2" placeholder="Email 2 (例如: user2@gmail.com)" class="flex-1 text-xs bg-cream-50 border border-cream-200 rounded-xl p-2.5 font-mono text-cream-800">
+                    <input type="email" id="whitelistEmail2" placeholder="Email 2" class="flex-1 text-xs bg-cream-50 border border-cream-200 rounded-xl p-2.5 font-mono text-cream-800">
                 </div>
                 <div class="flex items-center space-x-2">
-                    <input type="email" id="whitelistEmail3" placeholder="Email 3 (例如: user3@gmail.com)" class="flex-1 text-xs bg-cream-50 border border-cream-200 rounded-xl p-2.5 font-mono text-cream-800">
+                    <input type="email" id="whitelistEmail3" placeholder="Email 3" class="flex-1 text-xs bg-cream-50 border border-cream-200 rounded-xl p-2.5 font-mono text-cream-800">
                 </div>
             </div>
 
             <div class="bg-cream-50 p-3 rounded-xl border border-cream-200/60 text-xs text-cream-700 space-y-1">
                 <p class="font-bold text-cream-900">💡 後端 Security Rules 指引：</p>
-                <p>為了實現絕對的後端資料隔離，可將這 3 個 Email 貼入 Firestore 安全規則（Security Rules）：</p>
+                <p>將 Email 貼入 Firestore 安全規則（Security Rules）：</p>
                 <code class="block bg-cream-900 text-milktea-300 p-2 rounded text-[10px] font-mono overflow-x-auto">
-                    allow read, write: if request.auth.token.email in ['email1@gmail.com', 'email2@gmail.com', 'email3@gmail.com'];
+                    allow read, write: if request.auth.token.email in ['candicefft@gmail.com', 'email2@gmail.com', 'email3@gmail.com'];
                 </code>
             </div>
 
@@ -513,8 +502,7 @@
             GoogleAuthProvider, 
             onAuthStateChanged, 
             signOut,
-            signInWithCustomToken,
-            signInAnonymously
+            signInWithCustomToken
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, 
@@ -527,17 +515,15 @@
             onSnapshot 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Environment fallback parameters
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'expense-tracker-app';
         
-        // Demo Firebase config placeholder if not injected by environment
         const defaultFirebaseConfig = {
-            apiKey: "AIzaSyALBzhPcvwOdWsQ_NfrrD7u9zGP7QaWYdc",
-    authDomain: "my-expense-tracker-bd4fa.firebaseapp.com",
-    projectId: "my-expense-tracker-bd4fa",
-    storageBucket: "my-expense-tracker-bd4fa.firebasestorage.app",
-    messagingSenderId: "941527299904",
-    appId: "1:941527299904:web:f6466d8f291c2f4c3caca5"
+            apiKey: "AIzaSyDemoConfigKeyHereForPreviewOnly123",
+            authDomain: "demo-app.firebaseapp.com",
+            projectId: "demo-app",
+            storageBucket: "demo-app.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef123456"
         };
 
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : defaultFirebaseConfig;
@@ -548,34 +534,30 @@
         const db = getFirestore(app);
         const googleProvider = new GoogleAuthProvider();
 
-        // Application State
+        // Application State - Updated default whitelist with user's email
         let currentUser = null;
-        let whitelistEmails = ["user1@gmail.com", "user2@gmail.com", "user3@gmail.com"];
+        let whitelistEmails = ["candicefft@gmail.com"];
         let rawExpenses = [];
         let rawRepayments = [];
         let activePage = 'summary';
         let deleteTarget = { type: null, id: null };
 
-        // Firestore Path Helpers (Following Rule 1)
         const getExpensesCol = () => collection(db, 'artifacts', appId, 'public', 'data', 'expenses');
         const getRepaymentsCol = () => collection(db, 'artifacts', appId, 'public', 'data', 'repayments');
         const getSettingsDoc = () => doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'whitelist');
 
         window.addEventListener('DOMContentLoaded', async () => {
-            // Set default date input fields to today
             document.getElementById('expenseDate').valueAsDate = new Date();
             document.getElementById('repaymentDate').valueAsDate = new Date();
 
-            // Load Whitelist from LocalStorage or Firestore
             loadWhitelistFromLocal();
 
-            // Authenticate flow
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 }
             } catch (err) {
-                console.warn("Custom token auth fallback to standard/anonymous or google auth", err);
+                console.warn("Auth token fallback", err);
             }
 
             onAuthStateChanged(auth, async (user) => {
@@ -583,7 +565,6 @@
                 updateAuthUI(user);
 
                 if (user) {
-                    // Check email whitelist
                     const userEmail = user.email ? user.email.toLowerCase() : '';
                     const isAuthorized = whitelistEmails.length === 0 || whitelistEmails.some(e => e.trim().toLowerCase() === userEmail);
 
@@ -594,10 +575,8 @@
                         document.getElementById('unauthorizedBanner').classList.add('hidden');
                     }
 
-                    // Attach Realtime Firestore Listeners
                     setupFirestoreListeners();
                 } else {
-                    // Reset Data View
                     rawExpenses = [];
                     rawRepayments = [];
                     renderAllViews();
@@ -605,7 +584,6 @@
             });
         });
 
-        // Google Login Action
         window.handleGoogleLogin = async function() {
             try {
                 await signInWithPopup(auth, googleProvider);
@@ -616,7 +594,6 @@
             }
         };
 
-        // Logout Action
         window.handleLogout = async function() {
             try {
                 await signOut(auth);
@@ -650,33 +627,28 @@
         function setupFirestoreListeners() {
             if (!currentUser) return;
 
-            // Expenses Realtime Listener
             onSnapshot(getExpensesCol(), (snapshot) => {
                 rawExpenses = [];
                 snapshot.forEach((docSnap) => {
                     rawExpenses.push({ id: docSnap.id, ...docSnap.data() });
                 });
-                // Sort by Date Descending in JS Memory (Rule 2)
                 rawExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
                 renderAllViews();
             }, (error) => {
                 console.error("Firestore Expense Snapshot Error:", error);
             });
 
-            // Repayments Realtime Listener
             onSnapshot(getRepaymentsCol(), (snapshot) => {
                 rawRepayments = [];
                 snapshot.forEach((docSnap) => {
                     rawRepayments.push({ id: docSnap.id, ...docSnap.data() });
                 });
-                // Sort by Date Descending in JS Memory
                 rawRepayments.sort((a, b) => new Date(b.date) - new Date(a.date));
                 renderAllViews();
             }, (error) => {
                 console.error("Firestore Repayment Snapshot Error:", error);
             });
 
-            // Whitelist Settings Listener
             onSnapshot(getSettingsDoc(), (docSnap) => {
                 if (docSnap.exists() && docSnap.data().emails) {
                     whitelistEmails = docSnap.data().emails;
@@ -685,7 +657,6 @@
             }, (err) => console.log("No remote whitelist config yet"));
         }
 
-        // Save Expense (Add or Edit)
         window.handleSaveExpense = async function(event) {
             event.preventDefault();
             if (!currentUser) {
@@ -720,7 +691,6 @@
             }
         };
 
-        // Save Repayment (Add or Edit)
         window.handleSaveRepayment = async function(event) {
             event.preventDefault();
             if (!currentUser) {
@@ -773,7 +743,6 @@
             openModal('deleteConfirmModal');
         };
 
-        // Whitelist Storage
         window.saveWhitelist = async function() {
             const e1 = document.getElementById('whitelistEmail1').value.trim();
             const e2 = document.getElementById('whitelistEmail2').value.trim();
@@ -786,14 +755,13 @@
                 try {
                     await setDoc(getSettingsDoc(), { emails: whitelistEmails, updatedAt: new Date().toISOString() });
                 } catch (e) {
-                    console.log("Remote whitelist save skipped or no permission", e);
+                    console.log("Remote whitelist save skipped", e);
                 }
             }
 
             showToast("白名單已更新！", "success");
             closeModal('whitelistModal');
 
-            // Recheck current user
             if (currentUser && currentUser.email) {
                 const userEmail = currentUser.email.toLowerCase();
                 const isAuthorized = whitelistEmails.some(e => e.trim().toLowerCase() === userEmail);
@@ -821,7 +789,6 @@
         }
 
         function renderAllViews() {
-            // 1. Calculate Metrics
             const totalExpense = rawExpenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
             const totalRepaid = rawRepayments.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
             const netBalance = totalExpense - totalRepaid;
@@ -844,24 +811,17 @@
                 netStatusText.textContent = `✨ 帳目平衡，無未結欠款`;
             }
 
-            // 2. Aggregate Scheme A (Per Person Summary)
             renderPersonSummaryGrid();
-
-            // 3. Update Person Options Datalist & Select Filter Dropdowns
             updatePersonDropdownOptions();
-
-            // 4. Render Tables
             renderExpenseTable();
             renderRepaymentTable();
 
-            // 5. Update Badges
             document.getElementById('badgeExpenseCount').textContent = rawExpenses.length;
             document.getElementById('badgeRepaymentCount').textContent = rawRepayments.length;
         }
 
-        // Scheme A: Calculate per-person summary
         function renderPersonSummaryGrid() {
-            const personMap = {}; // { '阿明': { expense: 1000, repayment: 600 } }
+            const personMap = {};
 
             rawExpenses.forEach(item => {
                 const p = item.person || '未分類';
@@ -938,7 +898,6 @@
             const datalist = document.getElementById('personOptions');
             datalist.innerHTML = Array.from(personsSet).map(p => `<option value="${p}">`).join('');
 
-            // Update Select Filter dropdowns preserving current selection
             const expSelect = document.getElementById('filterExpensePerson');
             const repSelect = document.getElementById('filterRepaymentPerson');
             const currExpP = expSelect.value;
@@ -962,7 +921,6 @@
             showToast(`已切換至【代支明細】並套用對象篩選：${personName}`, 'info');
         };
 
-        // Page Switcher Navigation Handler
         window.switchPage = function(pageName) {
             activePage = pageName;
             const pages = ['summary', 'expense', 'repayment'];
@@ -974,34 +932,18 @@
 
                 if (p === pageName) {
                     pageElem.classList.remove('hidden');
-                    
-                    // Desktop Top Nav Active State
-                    if (navBtn) {
-                        navBtn.className = 'py-3 px-4 font-bold text-sm text-milktea-600 border-b-2 border-milktea-500 transition flex items-center space-x-2';
-                    }
-                    // Mobile Bottom Nav Active State
-                    if (mobileNavBtn) {
-                        mobileNavBtn.className = 'flex flex-col items-center justify-center w-full h-full text-milktea-600 font-bold transition';
-                    }
+                    if (navBtn) navBtn.className = 'py-3 px-4 font-bold text-sm text-milktea-600 border-b-2 border-milktea-500 transition flex items-center space-x-2';
+                    if (mobileNavBtn) mobileNavBtn.className = 'flex flex-col items-center justify-center w-full h-full text-milktea-600 font-bold transition';
                 } else {
                     pageElem.classList.add('hidden');
-                    
-                    // Desktop Top Nav Inactive State
-                    if (navBtn) {
-                        navBtn.className = 'py-3 px-4 font-medium text-sm text-cream-700 border-b-2 border-transparent hover:text-cream-900 transition flex items-center space-x-2';
-                    }
-                    // Mobile Bottom Nav Inactive State
-                    if (mobileNavBtn) {
-                        mobileNavBtn.className = 'flex flex-col items-center justify-center w-full h-full text-cream-700/60 transition';
-                    }
+                    if (navBtn) navBtn.className = 'py-3 px-4 font-medium text-sm text-cream-700 border-b-2 border-transparent hover:text-cream-900 transition flex items-center space-x-2';
+                    if (mobileNavBtn) mobileNavBtn.className = 'flex flex-col items-center justify-center w-full h-full text-cream-700/60 transition';
                 }
             });
 
-            // Scroll smoothly to top when switching pages
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        // Render Expense Table
         window.applyExpenseFilters = function() {
             renderExpenseTable();
         };
@@ -1043,7 +985,6 @@
             `).join('');
         }
 
-        // Render Repayment Table
         window.applyRepaymentFilters = function() {
             renderRepaymentTable();
         };
@@ -1121,14 +1062,13 @@
             document.getElementById('repaymentModalTitle').textContent = '新增收回款項';
         }
 
-        // Export Data to CSV
         window.exportDataCSV = function() {
             if (rawExpenses.length === 0 && rawRepayments.length === 0) {
                 showToast("尚無數據可匯出", "error");
                 return;
             }
 
-            let csvContent = "\uFEFF"; // UTF-8 BOM for Excel Chinese support
+            let csvContent = "\uFEFF";
             csvContent += "=== 代支費用明細 ===\n";
             csvContent += "日期,墊付對象,分類,金額,備註說明,建立者\n";
 
