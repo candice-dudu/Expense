@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代支費用管理系統 - Expense Tracker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Inter + Noto Sans TC) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // 奶油奶茶色調 (Cream & Milk Tea Palette)
+                        milktea: {
+                            50: '#FAF7F2',
+                            100: '#F3ECE1',
+                            200: '#E6D7C3',
+                            300: '#D7BEA2',
+                            400: '#C5A381',
+                            500: '#B28B65', // 主奶茶棕色
+                            600: '#946E4A',
+                            700: '#755335',
+                            800: '#5A3E26',
+                            900: '#3D2A1A',
+                        },
+                        cream: {
+                            50: '#FDFBF7',  // 主背景底色 (溫暖奶油白)
+                            100: '#F9F5EC', // 卡片與次要背景
+                            200: '#F1E8D9', // 柔和邊框色
+                            300: '#E4D5BE',
+                            700: '#5C4E43',
+                            800: '#43372C',  // 深烤榛果主文字
+                            900: '#2C231A',  // 標題濃郁深棕
+                        },
+                        caramel: {
+                            50: '#FAF3EB',
+                            100: '#F5E6D3',
+                            200: '#EACFA8',
+                            500: '#C88D51',
+                            600: '#AF753B', // 收回金額焦糖主色
+                            700: '#8F5B27',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans TC', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #F9F5EC; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E4D5BE; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #C5A381; }
+    </style>
+</head>
+<body class="bg-cream-50 text-cream-800 min-h-screen flex flex-col antialiased pb-20 sm:pb-6">
+
+    <!-- Navigation Header -->
+    <header class="bg-white/90 backdrop-blur-md border-b border-cream-200 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-milktea-500 text-cream-50 flex items-center justify-center font-bold text-xl shadow-sm">
+                    <i class="fa-solid font-bold fa-mug-hot"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-cream-900 text-lg leading-tight">代支費用管理</h1>
+                </div>
+            </div>
+
+            <!-- User Auth Profile Section -->
+            <div id="authStatusArea" class="flex items-center space-x-3">
+                <div id="userInfo" class="hidden flex items-center space-x-2 bg-cream-100 rounded-full py-1 px-3 border border-cream-200">
+                    <img id="userAvatar" class="w-7 h-7 rounded-full border border-white" src="" alt="User Avatar">
+                    <span id="userEmailText" class="text-xs font-medium text-cream-800 max-w-[120px] sm:max-w-xs truncate"></span>
+                </div>
+                
+                <button id="btnLogin" onclick="handleGoogleLogin()" class="hidden bg-milktea-500 hover:bg-milktea-600 text-white text-sm font-medium px-4 py-2 rounded-xl transition-all flex items-center shadow-xs">
+                    <i class="fa-brands fa-google mr-2"></i> Google 登入
+                </button>
+
+                <button id="btnLogout" onclick="handleLogout()" class="hidden bg-cream-200 hover:bg-cream-300 text-cream-800 text-xs font-medium px-3 py-1.5 rounded-xl transition-all">
+                    登出
+                </button>
+
+                <button onclick="openModal('whitelistModal')" class="text-cream-700 hover:text-milktea-600 p-2 rounded-xl hover:bg-cream-100 transition" title="授權 Email 白名單設定">
+                    <i class="fa-solid fa-user-shield text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Navigation Bar (3 Main Pages Tabs for Desktop) -->
+    <nav class="bg-white/80 border-b border-cream-200 sticky top-16 z-20 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-around sm:justify-start sm:space-x-4">
+            <button id="navBtnSummary" onclick="switchPage('summary')" class="py-3 px-4 font-bold text-sm text-milktea-600 border-b-2 border-milktea-500 transition flex items-center space-x-2">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>1. 結欠總覽</span>
+            </button>
+            <button id="navBtnExpense" onclick="switchPage('expense')" class="py-3 px-4 font-medium text-sm text-cream-700 border-b-2 border-transparent hover:text-cream-900 transition flex items-center space-x-2">
+                <i class="fa-solid fa-receipt"></i>
+                <span>2. 代支明細</span>
+                <span id="badgeExpenseCount" class="bg-cream-100 text-cream-800 text-xs px-2 py-0.5 rounded-full font-mono border border-cream-200">0</span>
+            </button>
+            <button id="navBtnRepayment" onclick="switchPage('repayment')" class="py-3 px-4 font-medium text-sm text-cream-700 border-b-2 border-transparent hover:text-cream-900 transition flex items-center space-x-2">
+                <i class="fa-solid fa-hand-holding-dollar"></i>
+                <span>3. 收回明細</span>
+                <span id="badgeRepaymentCount" class="bg-cream-100 text-cream-800 text-xs px-2 py-0.5 rounded-full font-mono border border-cream-200">0</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Unauthorized Email Access Warning Box -->
+        <div id="unauthorizedBanner" class="hidden bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-2xl shadow-xs">
+            <div class="flex items-start">
+                <i class="fa-solid fa-triangle-exclamation text-amber-600 text-xl mr-3 mt-0.5"></i>
+                <div>
+                    <h3 class="text-sm font-bold text-amber-900">未受授權存取</h3>
+                    <p class="text-xs text-amber-800 mt-1">目前登入的 Email (<span id="unauthorizedEmail" class="font-mono font-bold"></span>) 未在系統設定的 3 個許可白名單中。請切換授權帳號或點擊右上角盾牌圖示調整白名單設定。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 1: 結欠總覽 (Dashboard & Person Breakdown) -->
+        <div id="pageSummary" class="space-y-6">
+            <!-- Main Dashboard Metrics (3 Key Cards) -->
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Total Expenses -->
+                <div class="bg-white rounded-2xl p-5 border border-cream-200/80 shadow-xs relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-cream-700/60 uppercase tracking-wider">歷史代支總額</p>
+                            <h3 id="metricTotalExpense" class="text-2xl font-bold text-cream-900 mt-1">$0</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-milktea-50 text-milktea-600 flex items-center justify-center">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-cream-700/70 mt-3 flex items-center">
+                        <span id="metricExpenseCount" class="font-semibold text-cream-900 mr-1">0</span> 筆代支記錄
+                    </p>
+                </div>
+
+                <!-- Total Recovered -->
+                <div class="bg-white rounded-2xl p-5 border border-cream-200/80 shadow-xs relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-cream-700/60 uppercase tracking-wider">歷史收回總額</p>
+                            <h3 id="metricTotalRepaid" class="text-2xl font-bold text-caramel-600 mt-1">$0</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-caramel-50 text-caramel-600 flex items-center justify-center">
+                            <i class="fa-solid fa-arrow-down-left-to-square"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-cream-700/70 mt-3 flex items-center">
+                        <span id="metricRepaidCount" class="font-semibold text-cream-900 mr-1">0</span> 筆收款記錄
+                    </p>
+                </div>
+
+                <!-- Outstanding Balance (Calculated) -->
+                <div class="bg-gradient-to-br from-milktea-600 to-milktea-800 text-cream-50 rounded-2xl p-5 shadow-xs relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-milktea-200 uppercase tracking-wider">當前累積未結欠款</p>
+                            <h3 id="metricNetBalance" class="text-3xl font-extrabold mt-1">$0</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-white/10 text-cream-50 flex items-center justify-center backdrop-blur-sm">
+                            <i class="fa-solid fa-scale-balanced"></i>
+                        </div>
+                    </div>
+                    <p id="metricNetStatusText" class="text-xs text-milktea-100 mt-3">
+                        無未結欠款
+                    </p>
+                </div>
+            </section>
+
+            <!-- Scheme A: Per-Person Balance Breakdown List -->
+            <section class="bg-white rounded-2xl border border-cream-200/80 shadow-xs p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-users text-milktea-500"></i>
+                        <h2 class="font-bold text-cream-900 text-base">個人/對象結欠匯總</h2>
+                    </div>
+                    <span class="text-xs text-cream-700/60">點擊人名可快速前往明細頁面</span>
+                </div>
+
+                <!-- Person Chips / Grid Container -->
+                <div id="personSummaryGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <div class="col-span-full text-center py-6 text-cream-700/50 text-sm">
+                        尚無個人帳目記錄，請點擊下方新增第一筆代支費用。
+                    </div>
+                </div>
+            </section>
+
+            <!-- Action Buttons & Data Controls Bar -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-cream-200/80 shadow-xs">
+                <div class="flex items-center space-x-2">
+                    <button onclick="openModal('addExpenseModal')" class="bg-milktea-500 hover:bg-milktea-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition flex items-center shadow-xs">
+                        <i class="fa-solid fa-plus mr-2"></i> 新增代支費用
+                    </button>
+                    <button onclick="openModal('addRepaymentModal')" class="bg-caramel-600 hover:bg-caramel-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition flex items-center shadow-xs">
+                        <i class="fa-solid fa-hand-holding-dollar mr-2"></i> 新增收回款項
+                    </button>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button onclick="exportDataCSV()" class="bg-cream-100 border border-cream-200 text-cream-800 hover:bg-cream-200 text-xs font-semibold px-3.5 py-2.5 rounded-xl transition flex items-center shadow-xs">
+                        <i class="fa-solid fa-file-csv text-milktea-600 mr-1.5"></i> 匯出報表 (CSV)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 2: 代支費用明細頁面 -->
+        <div id="pageExpense" class="hidden space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-cream-200/80 shadow-xs">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-receipt text-milktea-500 text-xl"></i>
+                    <div>
+                        <h2 class="font-bold text-cream-900 text-base">代支費用明細表</h2>
+                        <p class="text-xs text-cream-700/60">所有幫他人代刷、代付的歷史費用紀錄</p>
+                    </div>
+                </div>
+                <button onclick="openModal('addExpenseModal')" class="bg-milktea-500 hover:bg-milktea-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition flex items-center shadow-xs self-start sm:self-auto">
+                    <i class="fa-solid fa-plus mr-1.5"></i> 新增代支
+                </button>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-cream-200/80 shadow-xs p-4 space-y-4">
+                <!-- Filters Bar -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-cream-50 p-3 rounded-xl border border-cream-200/60">
+                    <div>
+                        <label class="block text-xs font-semibold text-cream-700 mb-1">對象篩選</label>
+                        <select id="filterExpensePerson" onchange="applyExpenseFilters()" class="w-full text-xs bg-white border border-cream-200 rounded-lg p-2 focus:ring-2 focus:ring-milktea-500 text-cream-800">
+                            <option value="">全部對象</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-cream-700 mb-1">費用分類篩選</label>
+                        <select id="filterExpenseCategory" onchange="applyExpenseFilters()" class="w-full text-xs bg-white border border-cream-200 rounded-lg p-2 focus:ring-2 focus:ring-milktea-500 text-cream-800">
+                            <option value="">全部分類</option>
+                            <option value="信用卡">信用卡代刷</option>
+                            <option value="電費/水費/網速">電費/水費/網速</option>
+                            <option value="房屋租金">房屋租金</option>
+                            <option value="餐費">餐費</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-cream-700 mb-1">月份篩選</label>
+                        <input type="month" id="filterExpenseMonth" onchange="applyExpenseFilters()" class="w-full text-xs bg-white border border-cream-200 rounded-lg p-2 focus:ring-2 focus:ring-milktea-500 text-cream-800">
+                    </div>
+                </div>
+
+                <!-- Expense Table -->
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse min-w-[600px]">
+                        <thead>
+                            <tr class="text-xs font-semibold text-cream-700/60 border-b border-cream-100">
+                                <th class="py-3 px-3">日期</th>
+                                <th class="py-3 px-3">對象 (墊付對象)</th>
+                                <th class="py-3 px-3">分類</th>
+                                <th class="py-3 px-3 text-right">金額</th>
+                                <th class="py-3 px-3">備註說明</th>
+                                <th class="py-3 px-3 text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenseTableBody" class="text-xs text-cream-800 divide-y divide-cream-100">
+                            <tr>
+                                <td colspan="6" class="text-center py-8 text-cream-700/50">讀取中或尚無資料...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 3: 收回金額明細頁面 -->
+        <div id="pageRepayment" class="hidden space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-cream-200/80 shadow-xs">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-hand-holding-dollar text-caramel-600 text-xl"></i>
+                    <div>
+                        <h2 class="font-bold text-cream-900 text-base">收回金額明細表</h2>
+                        <p class="text-xs text-cream-700/60">所有從他人收回/款項還清的紀錄</p>
+                    </div>
+                </div>
+                <button onclick="openModal('addRepaymentModal')" class="bg-caramel-600 hover:bg-caramel-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition flex items-center shadow-xs self-start sm:self-auto">
+                    <i class="fa-solid fa-plus mr-1.5"></i> 新增收回
+                </button>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-cream-200/80 shadow-xs p-4 space-y-4">
+                <!-- Filters Bar -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-cream-50 p-3 rounded-xl border border-cream-200/60">
+                    <div>
+                        <label class="block text-xs font-semibold text-cream-700 mb-1">付款人篩選</label>
+                        <select id="filterRepaymentPerson" onchange="applyRepaymentFilters()" class="w-full text-xs bg-white border border-cream-200 rounded-lg p-2 focus:ring-2 focus:ring-caramel-500 text-cream-800">
+                            <option value="">全部付款人</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-cream-700 mb-1">月份篩選</label>
+                        <input type="month" id="filterRepaymentMonth" onchange="applyRepaymentFilters()" class="w-full text-xs bg-white border border-cream-200 rounded-lg p-2 focus:ring-2 focus:ring-caramel-500 text-cream-800">
+                    </div>
+                </div>
+
+                <!-- Repayment Table -->
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse min-w-[500px]">
+                        <thead>
+                            <tr class="text-xs font-semibold text-cream-700/60 border-b border-cream-100">
+                                <th class="py-3 px-3">日期</th>
+                                <th class="py-3 px-3">付款人 (從誰收回)</th>
+                                <th class="py-3 px-3 text-right">收回金額</th>
+                                <th class="py-3 px-3">收款方式 / 備註</th>
+                                <th class="py-3 px-3 text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="repaymentTableBody" class="text-xs text-cream-800 divide-y divide-cream-100">
+                            <tr>
+                                <td colspan="5" class="text-center py-8 text-cream-700/50">讀取中或尚無資料...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile Bottom Navigation Bar (Optimized for handheld usage) -->
+    <nav class="sm:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-cream-200 z-40 flex justify-around items-center h-16 shadow-lg px-2">
+        <button id="mobileNavSummary" onclick="switchPage('summary')" class="flex flex-col items-center justify-center w-full h-full text-milktea-600 font-bold transition">
+            <i class="fa-solid fa-chart-pie text-lg"></i>
+            <span class="text-[10px] mt-1">結欠總覽</span>
+        </button>
+        <button id="mobileNavExpense" onclick="switchPage('expense')" class="flex flex-col items-center justify-center w-full h-full text-cream-700/60 transition">
+            <i class="fa-solid fa-receipt text-lg"></i>
+            <span class="text-[10px] mt-1">代支明細</span>
+        </button>
+        <button id="mobileNavRepayment" onclick="switchPage('repayment')" class="flex flex-col items-center justify-center w-full h-full text-cream-700/60 transition">
+            <i class="fa-solid fa-hand-holding-dollar text-lg"></i>
+            <span class="text-[10px] mt-1">收回明細</span>
+        </button>
+    </nav>
+
+    <!-- Modal 1: Add/Edit Expense -->
+    <div id="addExpenseModal" class="fixed inset-0 bg-cream-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4 relative">
+            <button onclick="closeModal('addExpenseModal')" class="absolute top-4 right-4 text-cream-700/60 hover:text-cream-900">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="font-bold text-cream-900 text-lg flex items-center">
+                <i class="fa-solid fa-circle-plus text-milktea-500 mr-2"></i>
+                <span id="expenseModalTitle">新增代支費用</span>
+            </h3>
+
+            <form id="expenseForm" onsubmit="handleSaveExpense(event)" class="space-y-3">
+                <input type="hidden" id="expenseEditId" value="">
+                <div>
+                    <label class="block text-xs font-semibold text-cream-700 mb-1">日期 *</label>
+                    <input type="date" id="expenseDate" required class="w-full text-sm bg-cream-50 border border-cream-200 rounded-xl p-2.5 focus:ring-2 focus:ring-milktea-500 text-cream-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-cream-700 mb-1">墊付對象 (幫誰代支) *</label>
+                    <input type="text" id="expensePerson" list="personOptions" required placeholder="例如: 阿明、公司、室友A" class="w-full text-sm bg-cream-50 border border-cream-200 rounded-xl p-2.5 focus:ring-2 focus:ring-milktea-500 text-cream-800">
+                    <datalist id="personOptions"></datalist>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-cream-700 mb-1">費用分類 *</label>
+                    <select id="expenseCategory" required class="w-full text-sm bg-cream-50 border border-cream-200 rounded-xl p-2.5 focus:ring-2 focus:ring-milktea-500 text-cream-800">
+                        <option value="信用卡">信用卡代刷</option>
+                        <option value="電費/水費/網速">電費/水費/網速</option>
+                        <option value="房屋租金">房屋租金</option>
+                        <option value="餐費">餐費</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-cream-700 mb-1">金額 ($) *</label>
+                    <input type="number" id="expenseAmount" step="0.01" min="0.01" required placeholder="0.00" class="w-full text-sm bg-cream-50 border border-cream-200 rounded-xl p-2.5 focus:ring-2 focus:ring-milktea-500 font-mono text-base font-bold text-cream-900">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-cream-700 mb-1">備註說明</label>
+                    <input type="text" id="expenseNote" placeholder="例如: 代刷 iPhone 配件" class="w-full text-sm bg-cream-50 border border-cream-200 rounded-xl p-2.5 focus:ring-2 focus:ring-milktea-500 text-cream-800">
+                </div>
+
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal('addExpenseModal')" class="px-4 py-2 text-xs font-semibold text-cream-700 bg-cream-100 hover:bg-cream-200 rounded-xl transition">取消</button>
+                    <button type="submit" class="px-5 py-2 text-xs font-semibold text-white bg-milktea-500 hover:bg-milktea-600 rounded-xl transition shadow-xs">儲存記錄</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Add/Edit Repayment -->
+    <div id="addRepaymentModal" class="fixed inset-0 bg-cream-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4 relative">
+            <button onclick="closeModal('addRepaymentModal')" class="absolute top-4 right-4 text-cream-700/60 hover:text-cream-900">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="font-bold text-cream-900 text-lg flex items-center">
+                <i class="fa-solid fa-hand-holding-dollar text-caramel-600 mr-2"></i>
+                <span id="repaymentModalTitle">新增收回款項</span>
+            </h3>
+
+            <form id="repaymentForm" onsubmit="handleSaveRepayment(event)" class="space-y-3">
+                <input type="hidden" id="repaymentEditId" value="">
+                <div>
+                    <label class="block text-xs font-semibold text-cream-700 mb-1">收款日期 *</label>
+                    <input type="date" id="repaymentDate" required class="w-full text-sm bg-cream-50 border border-cream-200 rounded-xl p-2.5 focus:ring-2 focus:ring-caramel-500 text-cream-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-cream-700 mb-1">付款人 (從誰收回) *</label>
+                    <input type="text" id="repaymentPerson" list="personOptions" required placeholder="例如: 阿明" class="w-full text-sm bg-cream-50 border border-cream-200 rounded-xl p-2.5 focus:ring-2 focus:ring-caramel-500 text-cream-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-cream-700 mb-1">收回金額 ($) *</label>
+                    <input type="number" id="repaymentAmount" step="0.01" min="0.01" required placeholder="0.00" class="w-full text-sm bg-cream-50 border border-cream-200 rounded-xl p-2.5 focus:ring-2 focus:ring-caramel-500 font-mono text-base font-bold text-caramel-600">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-cream-700 mb-1">收款方式 / 備註</label>
+                    <input type="text" id="repaymentNote" placeholder="例如: PayMe / 轉數快 / 現金" class="w-full text-sm bg-cream-50 border border-cream-200 rounded-xl p-2.5 focus:ring-2 focus:ring-caramel-500 text-cream-800">
+                </div>
+
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal('addRepaymentModal')" class="px-4 py-2 text-xs font-semibold text-cream-700 bg-cream-100 hover:bg-cream-200 rounded-xl transition">取消</button>
+                    <button type="submit" class="px-5 py-2 text-xs font-semibold text-white bg-caramel-600 hover:bg-caramel-700 rounded-xl transition shadow-xs">儲存收款</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 3: Whitelist Config Modal -->
+    <div id="whitelistModal" class="fixed inset-0 bg-cream-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 relative">
+            <button onclick="closeModal('whitelistModal')" class="absolute top-4 right-4 text-cream-700/60 hover:text-cream-900">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="font-bold text-cream-900 text-lg flex items-center">
+                <i class="fa-solid fa-user-shield text-milktea-500 mr-2"></i>
+                <span>授權用戶白名單 (最多 3 個 Google Email)</span>
+            </h3>
+            <p class="text-xs text-cream-700/70">僅有列在下方白名單內的 Google Email 帳號可存取、閱讀與寫入此 Web App 資料。</p>
+
+            <div class="space-y-2 py-2">
+                <div class="flex items-center space-x-2">
+                    <input type="email" id="whitelistEmail1" placeholder="Email 1 (例如: user1@gmail.com)" class="flex-1 text-xs bg-cream-50 border border-cream-200 rounded-xl p-2.5 font-mono text-cream-800">
+                </div>
+                <div class="flex items-center space-x-2">
+                    <input type="email" id="whitelistEmail2" placeholder="Email 2 (例如: user2@gmail.com)" class="flex-1 text-xs bg-cream-50 border border-cream-200 rounded-xl p-2.5 font-mono text-cream-800">
+                </div>
+                <div class="flex items-center space-x-2">
+                    <input type="email" id="whitelistEmail3" placeholder="Email 3 (例如: user3@gmail.com)" class="flex-1 text-xs bg-cream-50 border border-cream-200 rounded-xl p-2.5 font-mono text-cream-800">
+                </div>
+            </div>
+
+            <div class="bg-cream-50 p-3 rounded-xl border border-cream-200/60 text-xs text-cream-700 space-y-1">
+                <p class="font-bold text-cream-900">💡 後端 Security Rules 指引：</p>
+                <p>為了實現絕對的後端資料隔離，可將這 3 個 Email 貼入 Firestore 安全規則（Security Rules）：</p>
+                <code class="block bg-cream-900 text-milktea-300 p-2 rounded text-[10px] font-mono overflow-x-auto">
+                    allow read, write: if request.auth.token.email in ['email1@gmail.com', 'email2@gmail.com', 'email3@gmail.com'];
+                </code>
+            </div>
+
+            <div class="pt-2 flex justify-end space-x-2">
+                <button type="button" onclick="closeModal('whitelistModal')" class="px-4 py-2 text-xs font-semibold text-cream-700 bg-cream-100 hover:bg-cream-200 rounded-xl transition">關閉</button>
+                <button type="button" onclick="saveWhitelist()" class="px-5 py-2 text-xs font-semibold text-white bg-milktea-500 hover:bg-milktea-600 rounded-xl transition shadow-xs">儲存白名單</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 4: Delete Confirmation Modal -->
+    <div id="deleteConfirmModal" class="fixed inset-0 bg-cream-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl space-y-4 text-center">
+            <div class="w-12 h-12 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center mx-auto">
+                <i class="fa-solid fa-trash-can text-xl"></i>
+            </div>
+            <h3 class="font-bold text-cream-900 text-base">確定要刪除此筆記錄？</h3>
+            <p class="text-xs text-cream-700/70">刪除後數據將無法復原，請確認操作。</p>
+            <div class="flex justify-center space-x-2 pt-2">
+                <button onclick="closeModal('deleteConfirmModal')" class="px-4 py-2 text-xs font-semibold text-cream-700 bg-cream-100 hover:bg-cream-200 rounded-xl transition">取消</button>
+                <button id="btnConfirmDelete" class="px-5 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition shadow-xs">確認刪除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Notification Toast -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-cream-900 text-cream-50 text-xs font-medium px-4 py-3 rounded-xl shadow-lg flex items-center space-x-2 border border-milktea-700">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-milktea-300"></i>
+        <span id="toastMessage">已儲存成功</span>
+    </div>
+
+    <!-- Firebase Standard JS SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInWithPopup, 
+            GoogleAuthProvider, 
+            onAuthStateChanged, 
+            signOut,
+            signInWithCustomToken,
+            signInAnonymously
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            doc, 
+            addDoc, 
+            setDoc,
+            updateDoc, 
+            deleteDoc, 
+            onSnapshot 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Environment fallback parameters
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'expense-tracker-app';
+        
+        // Demo Firebase config placeholder if not injected by environment
+        const defaultFirebaseConfig = {
+            apiKey: "AIzaSyDemoConfigKeyHereForPreviewOnly123",
+            authDomain: "demo-app.firebaseapp.com",
+            projectId: "demo-app",
+            storageBucket: "demo-app.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef123456"
+        };
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : defaultFirebaseConfig;
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        // Application State
+        let currentUser = null;
+        let whitelistEmails = ["user1@gmail.com", "user2@gmail.com", "user3@gmail.com"];
+        let rawExpenses = [];
+        let rawRepayments = [];
+        let activePage = 'summary';
+        let deleteTarget = { type: null, id: null };
+
+        // Firestore Path Helpers (Following Rule 1)
+        const getExpensesCol = () => collection(db, 'artifacts', appId, 'public', 'data', 'expenses');
+        const getRepaymentsCol = () => collection(db, 'artifacts', appId, 'public', 'data', 'repayments');
+        const getSettingsDoc = () => doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'whitelist');
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Set default date input fields to today
+            document.getElementById('expenseDate').valueAsDate = new Date();
+            document.getElementById('repaymentDate').valueAsDate = new Date();
+
+            // Load Whitelist from LocalStorage or Firestore
+            loadWhitelistFromLocal();
+
+            // Authenticate flow
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                }
+            } catch (err) {
+                console.warn("Custom token auth fallback to standard/anonymous or google auth", err);
+            }
+
+            onAuthStateChanged(auth, async (user) => {
+                currentUser = user;
+                updateAuthUI(user);
+
+                if (user) {
+                    // Check email whitelist
+                    const userEmail = user.email ? user.email.toLowerCase() : '';
+                    const isAuthorized = whitelistEmails.length === 0 || whitelistEmails.some(e => e.trim().toLowerCase() === userEmail);
+
+                    if (!isAuthorized && user.email) {
+                        document.getElementById('unauthorizedBanner').classList.remove('hidden');
+                        document.getElementById('unauthorizedEmail').textContent = user.email;
+                    } else {
+                        document.getElementById('unauthorizedBanner').classList.add('hidden');
+                    }
+
+                    // Attach Realtime Firestore Listeners
+                    setupFirestoreListeners();
+                } else {
+                    // Reset Data View
+                    rawExpenses = [];
+                    rawRepayments = [];
+                    renderAllViews();
+                }
+            });
+        });
+
+        // Google Login Action
+        window.handleGoogleLogin = async function() {
+            try {
+                await signInWithPopup(auth, googleProvider);
+                showToast("登入成功！", "success");
+            } catch (error) {
+                console.error("Google Auth Error:", error);
+                showToast("登入失敗: " + error.message, "error");
+            }
+        };
+
+        // Logout Action
+        window.handleLogout = async function() {
+            try {
+                await signOut(auth);
+                showToast("已安全登出", "success");
+            } catch (error) {
+                console.error("Signout error", error);
+            }
+        };
+
+        function updateAuthUI(user) {
+            const btnLogin = document.getElementById('btnLogin');
+            const btnLogout = document.getElementById('btnLogout');
+            const userInfo = document.getElementById('userInfo');
+            const userAvatar = document.getElementById('userAvatar');
+            const userEmailText = document.getElementById('userEmailText');
+
+            if (user) {
+                btnLogin.classList.add('hidden');
+                btnLogout.classList.remove('hidden');
+                userInfo.classList.remove('hidden');
+
+                userAvatar.src = user.photoURL || `https://placehold.co/100x100/B28B65/ffffff?text=${(user.email||'U').charAt(0).toUpperCase()}`;
+                userEmailText.textContent = user.email || '已驗證用戶';
+            } else {
+                btnLogin.classList.remove('hidden');
+                btnLogout.classList.add('hidden');
+                userInfo.classList.add('hidden');
+            }
+        }
+
+        function setupFirestoreListeners() {
+            if (!currentUser) return;
+
+            // Expenses Realtime Listener
+            onSnapshot(getExpensesCol(), (snapshot) => {
+                rawExpenses = [];
+                snapshot.forEach((docSnap) => {
+                    rawExpenses.push({ id: docSnap.id, ...docSnap.data() });
+                });
+                // Sort by Date Descending in JS Memory (Rule 2)
+                rawExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+                renderAllViews();
+            }, (error) => {
+                console.error("Firestore Expense Snapshot Error:", error);
+            });
+
+            // Repayments Realtime Listener
+            onSnapshot(getRepaymentsCol(), (snapshot) => {
+                rawRepayments = [];
+                snapshot.forEach((docSnap) => {
+                    rawRepayments.push({ id: docSnap.id, ...docSnap.data() });
+                });
+                // Sort by Date Descending in JS Memory
+                rawRepayments.sort((a, b) => new Date(b.date) - new Date(a.date));
+                renderAllViews();
+            }, (error) => {
+                console.error("Firestore Repayment Snapshot Error:", error);
+            });
+
+            // Whitelist Settings Listener
+            onSnapshot(getSettingsDoc(), (docSnap) => {
+                if (docSnap.exists() && docSnap.data().emails) {
+                    whitelistEmails = docSnap.data().emails;
+                    updateWhitelistModalInputs();
+                }
+            }, (err) => console.log("No remote whitelist config yet"));
+        }
+
+        // Save Expense (Add or Edit)
+        window.handleSaveExpense = async function(event) {
+            event.preventDefault();
+            if (!currentUser) {
+                showToast("請先登入帳號以進行儲存", "error");
+                return;
+            }
+
+            const editId = document.getElementById('expenseEditId').value;
+            const data = {
+                date: document.getElementById('expenseDate').value,
+                person: document.getElementById('expensePerson').value.trim(),
+                category: document.getElementById('expenseCategory').value,
+                amount: parseFloat(document.getElementById('expenseAmount').value) || 0,
+                note: document.getElementById('expenseNote').value.trim(),
+                updatedAt: new Date().toISOString(),
+                createdBy: currentUser.email || 'anonymous'
+            };
+
+            try {
+                if (editId) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', editId), data);
+                    showToast("代支費用已更新！", "success");
+                } else {
+                    await addDoc(getExpensesCol(), data);
+                    showToast("新增代支費用成功！", "success");
+                }
+                closeModal('addExpenseModal');
+                resetExpenseForm();
+            } catch (err) {
+                console.error("Save expense error:", err);
+                showToast("儲存失敗: " + err.message, "error");
+            }
+        };
+
+        // Save Repayment (Add or Edit)
+        window.handleSaveRepayment = async function(event) {
+            event.preventDefault();
+            if (!currentUser) {
+                showToast("請先登入帳號以進行儲存", "error");
+                return;
+            }
+
+            const editId = document.getElementById('repaymentEditId').value;
+            const data = {
+                date: document.getElementById('repaymentDate').value,
+                person: document.getElementById('repaymentPerson').value.trim(),
+                amount: parseFloat(document.getElementById('repaymentAmount').value) || 0,
+                note: document.getElementById('repaymentNote').value.trim(),
+                updatedAt: new Date().toISOString(),
+                createdBy: currentUser.email || 'anonymous'
+            };
+
+            try {
+                if (editId) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'repayments', editId), data);
+                    showToast("收款記錄已更新！", "success");
+                } else {
+                    await addDoc(getRepaymentsCol(), data);
+                    showToast("新增收款記錄成功！", "success");
+                }
+                closeModal('addRepaymentModal');
+                resetRepaymentForm();
+            } catch (err) {
+                console.error("Save repayment error:", err);
+                showToast("儲存失敗: " + err.message, "error");
+            }
+        };
+
+        window.confirmDelete = function(type, id) {
+            deleteTarget = { type, id };
+            document.getElementById('btnConfirmDelete').onclick = async () => {
+                try {
+                    if (deleteTarget.type === 'expense') {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', deleteTarget.id));
+                        showToast("代支紀錄已刪除", "success");
+                    } else if (deleteTarget.type === 'repayment') {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'repayments', deleteTarget.id));
+                        showToast("收款紀錄已刪除", "success");
+                    }
+                } catch (e) {
+                    showToast("刪除失敗: " + e.message, "error");
+                }
+                closeModal('deleteConfirmModal');
+            };
+            openModal('deleteConfirmModal');
+        };
+
+        // Whitelist Storage
+        window.saveWhitelist = async function() {
+            const e1 = document.getElementById('whitelistEmail1').value.trim();
+            const e2 = document.getElementById('whitelistEmail2').value.trim();
+            const e3 = document.getElementById('whitelistEmail3').value.trim();
+
+            whitelistEmails = [e1, e2, e3].filter(e => e.length > 0);
+            localStorage.setItem('whitelist_emails', JSON.stringify(whitelistEmails));
+
+            if (currentUser) {
+                try {
+                    await setDoc(getSettingsDoc(), { emails: whitelistEmails, updatedAt: new Date().toISOString() });
+                } catch (e) {
+                    console.log("Remote whitelist save skipped or no permission", e);
+                }
+            }
+
+            showToast("白名單已更新！", "success");
+            closeModal('whitelistModal');
+
+            // Recheck current user
+            if (currentUser && currentUser.email) {
+                const userEmail = currentUser.email.toLowerCase();
+                const isAuthorized = whitelistEmails.some(e => e.trim().toLowerCase() === userEmail);
+                if (!isAuthorized) {
+                    document.getElementById('unauthorizedBanner').classList.remove('hidden');
+                    document.getElementById('unauthorizedEmail').textContent = currentUser.email;
+                } else {
+                    document.getElementById('unauthorizedBanner').classList.add('hidden');
+                }
+            }
+        };
+
+        function loadWhitelistFromLocal() {
+            const saved = localStorage.getItem('whitelist_emails');
+            if (saved) {
+                try { whitelistEmails = JSON.parse(saved); } catch(e){}
+            }
+            updateWhitelistModalInputs();
+        }
+
+        function updateWhitelistModalInputs() {
+            document.getElementById('whitelistEmail1').value = whitelistEmails[0] || '';
+            document.getElementById('whitelistEmail2').value = whitelistEmails[1] || '';
+            document.getElementById('whitelistEmail3').value = whitelistEmails[2] || '';
+        }
+
+        function renderAllViews() {
+            // 1. Calculate Metrics
+            const totalExpense = rawExpenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+            const totalRepaid = rawRepayments.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+            const netBalance = totalExpense - totalRepaid;
+
+            document.getElementById('metricTotalExpense').textContent = `$${totalExpense.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('metricExpenseCount').textContent = rawExpenses.length;
+
+            document.getElementById('metricTotalRepaid').textContent = `$${totalRepaid.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('metricRepaidCount').textContent = rawRepayments.length;
+
+            const netElem = document.getElementById('metricNetBalance');
+            netElem.textContent = `$${netBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            const netStatusText = document.getElementById('metricNetStatusText');
+            if (netBalance > 0) {
+                netStatusText.textContent = `⚠️ 尚有 $${netBalance.toLocaleString()} 待回收`;
+            } else if (netBalance < 0) {
+                netStatusText.textContent = `💡 多收回 $${Math.abs(netBalance).toLocaleString()} (多付/預付)`;
+            } else {
+                netStatusText.textContent = `✨ 帳目平衡，無未結欠款`;
+            }
+
+            // 2. Aggregate Scheme A (Per Person Summary)
+            renderPersonSummaryGrid();
+
+            // 3. Update Person Options Datalist & Select Filter Dropdowns
+            updatePersonDropdownOptions();
+
+            // 4. Render Tables
+            renderExpenseTable();
+            renderRepaymentTable();
+
+            // 5. Update Badges
+            document.getElementById('badgeExpenseCount').textContent = rawExpenses.length;
+            document.getElementById('badgeRepaymentCount').textContent = rawRepayments.length;
+        }
+
+        // Scheme A: Calculate per-person summary
+        function renderPersonSummaryGrid() {
+            const personMap = {}; // { '阿明': { expense: 1000, repayment: 600 } }
+
+            rawExpenses.forEach(item => {
+                const p = item.person || '未分類';
+                if (!personMap[p]) personMap[p] = { expense: 0, repayment: 0 };
+                personMap[p].expense += Number(item.amount) || 0;
+            });
+
+            rawRepayments.forEach(item => {
+                const p = item.person || '未分類';
+                if (!personMap[p]) personMap[p] = { expense: 0, repayment: 0 };
+                personMap[p].repayment += Number(item.amount) || 0;
+            });
+
+            const gridContainer = document.getElementById('personSummaryGrid');
+            const persons = Object.keys(personMap);
+
+            if (persons.length === 0) {
+                gridContainer.innerHTML = `
+                    <div class="col-span-full text-center py-6 text-cream-700/50 text-sm">
+                        尚無個人帳目記錄，請在下方新增第一筆代支費用。
+                    </div>`;
+                return;
+            }
+
+            gridContainer.innerHTML = persons.map(person => {
+                const exp = personMap[person].expense;
+                const rep = personMap[person].repayment;
+                const owed = exp - rep;
+
+                let statusBadge = '';
+                if (owed > 0) {
+                    statusBadge = `<span class="text-[10px] font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full border border-amber-200">還欠 $${owed.toLocaleString()}</span>`;
+                } else if (owed === 0) {
+                    statusBadge = `<span class="text-[10px] font-bold bg-milktea-100 text-milktea-800 px-2 py-0.5 rounded-full border border-milktea-200">已結清</span>`;
+                } else {
+                    statusBadge = `<span class="text-[10px] font-bold bg-caramel-100 text-caramel-800 px-2 py-0.5 rounded-full border border-caramel-200">溢收 $${Math.abs(owed).toLocaleString()}</span>`;
+                }
+
+                return `
+                    <div onclick="filterByPerson('${person}')" class="cursor-pointer bg-cream-50 hover:bg-cream-100 border border-cream-200 rounded-xl p-3.5 transition group relative">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-8 h-8 rounded-full bg-milktea-100 text-milktea-700 flex items-center justify-center font-bold text-xs border border-milktea-200">
+                                    ${person.charAt(0)}
+                                </div>
+                                <span class="font-bold text-cream-900 text-sm group-hover:text-milktea-600 transition">${person}</span>
+                            </div>
+                            ${statusBadge}
+                        </div>
+                        <div class="space-y-1 text-xs text-cream-700/70 pt-1 border-t border-cream-200/60">
+                            <div class="flex justify-between">
+                                <span>代支小計:</span>
+                                <span class="font-mono text-cream-800">$${exp.toLocaleString()}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>已收小計:</span>
+                                <span class="font-mono text-caramel-600">$${rep.toLocaleString()}</span>
+                            </div>
+                            <div class="flex justify-between font-bold pt-1 text-cream-900">
+                                <span>當前淨結欠:</span>
+                                <span class="font-mono ${owed > 0 ? 'text-amber-700' : 'text-cream-900'}">$${owed.toLocaleString()}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updatePersonDropdownOptions() {
+            const personsSet = new Set();
+            rawExpenses.forEach(i => i.person && personsSet.add(i.person));
+            rawRepayments.forEach(i => i.person && personsSet.add(i.person));
+
+            const datalist = document.getElementById('personOptions');
+            datalist.innerHTML = Array.from(personsSet).map(p => `<option value="${p}">`).join('');
+
+            // Update Select Filter dropdowns preserving current selection
+            const expSelect = document.getElementById('filterExpensePerson');
+            const repSelect = document.getElementById('filterRepaymentPerson');
+            const currExpP = expSelect.value;
+            const currRepP = repSelect.value;
+
+            const optionsHtml = `<option value="">全部對象</option>` + Array.from(personsSet).map(p => `<option value="${p}">${p}</option>`).join('');
+            
+            expSelect.innerHTML = optionsHtml;
+            repSelect.innerHTML = optionsHtml;
+
+            expSelect.value = currExpP;
+            repSelect.value = currRepP;
+        }
+
+        window.filterByPerson = function(personName) {
+            document.getElementById('filterExpensePerson').value = personName;
+            document.getElementById('filterRepaymentPerson').value = personName;
+            applyExpenseFilters();
+            applyRepaymentFilters();
+            switchPage('expense');
+            showToast(`已切換至【代支明細】並套用對象篩選：${personName}`, 'info');
+        };
+
+        // Page Switcher Navigation Handler
+        window.switchPage = function(pageName) {
+            activePage = pageName;
+            const pages = ['summary', 'expense', 'repayment'];
+
+            pages.forEach(p => {
+                const pageElem = document.getElementById(`page${p.charAt(0).toUpperCase() + p.slice(1)}`);
+                const navBtn = document.getElementById(`navBtn${p.charAt(0).toUpperCase() + p.slice(1)}`);
+                const mobileNavBtn = document.getElementById(`mobileNav${p.charAt(0).toUpperCase() + p.slice(1)}`);
+
+                if (p === pageName) {
+                    pageElem.classList.remove('hidden');
+                    
+                    // Desktop Top Nav Active State
+                    if (navBtn) {
+                        navBtn.className = 'py-3 px-4 font-bold text-sm text-milktea-600 border-b-2 border-milktea-500 transition flex items-center space-x-2';
+                    }
+                    // Mobile Bottom Nav Active State
+                    if (mobileNavBtn) {
+                        mobileNavBtn.className = 'flex flex-col items-center justify-center w-full h-full text-milktea-600 font-bold transition';
+                    }
+                } else {
+                    pageElem.classList.add('hidden');
+                    
+                    // Desktop Top Nav Inactive State
+                    if (navBtn) {
+                        navBtn.className = 'py-3 px-4 font-medium text-sm text-cream-700 border-b-2 border-transparent hover:text-cream-900 transition flex items-center space-x-2';
+                    }
+                    // Mobile Bottom Nav Inactive State
+                    if (mobileNavBtn) {
+                        mobileNavBtn.className = 'flex flex-col items-center justify-center w-full h-full text-cream-700/60 transition';
+                    }
+                }
+            });
+
+            // Scroll smoothly to top when switching pages
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        // Render Expense Table
+        window.applyExpenseFilters = function() {
+            renderExpenseTable();
+        };
+
+        function renderExpenseTable() {
+            const pFilter = document.getElementById('filterExpensePerson').value;
+            const cFilter = document.getElementById('filterExpenseCategory').value;
+            const mFilter = document.getElementById('filterExpenseMonth').value;
+
+            const filtered = rawExpenses.filter(item => {
+                if (pFilter && item.person !== pFilter) return false;
+                if (cFilter && item.category !== cFilter) return false;
+                if (mFilter && !item.date.startsWith(mFilter)) return false;
+                return true;
+            });
+
+            const tbody = document.getElementById('expenseTableBody');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-cream-700/50">尚無符合條件的代支記錄</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(item => `
+                <tr class="hover:bg-cream-50 transition">
+                    <td class="py-3 px-3 font-mono text-cream-700/80">${item.date}</td>
+                    <td class="py-3 px-3 font-semibold text-cream-900">${item.person || '-'}</td>
+                    <td class="py-3 px-3">
+                        <span class="inline-block bg-cream-100 text-cream-800 text-[11px] px-2 py-0.5 rounded-md font-medium border border-cream-200">
+                            ${item.category || '其他'}
+                        </span>
+                    </td>
+                    <td class="py-3 px-3 text-right font-mono font-bold text-cream-900">$${(Number(item.amount)||0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td class="py-3 px-3 text-cream-700/80 max-w-xs truncate">${item.note || '-'}</td>
+                    <td class="py-3 px-3 text-center space-x-1">
+                        <button onclick="editExpense('${item.id}')" class="p-1 text-cream-700/50 hover:text-milktea-600 transition" title="編輯"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="confirmDelete('expense', '${item.id}')" class="p-1 text-cream-700/50 hover:text-rose-600 transition" title="刪除"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Render Repayment Table
+        window.applyRepaymentFilters = function() {
+            renderRepaymentTable();
+        };
+
+        function renderRepaymentTable() {
+            const pFilter = document.getElementById('filterRepaymentPerson').value;
+            const mFilter = document.getElementById('filterRepaymentMonth').value;
+
+            const filtered = rawRepayments.filter(item => {
+                if (pFilter && item.person !== pFilter) return false;
+                if (mFilter && !item.date.startsWith(mFilter)) return false;
+                return true;
+            });
+
+            const tbody = document.getElementById('repaymentTableBody');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-cream-700/50">尚無符合條件的收款記錄</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(item => `
+                <tr class="hover:bg-cream-50 transition">
+                    <td class="py-3 px-3 font-mono text-cream-700/80">${item.date}</td>
+                    <td class="py-3 px-3 font-semibold text-cream-900">${item.person || '-'}</td>
+                    <td class="py-3 px-3 text-right font-mono font-bold text-caramel-600">$${(Number(item.amount)||0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td class="py-3 px-3 text-cream-700/80 max-w-xs truncate">${item.note || '-'}</td>
+                    <td class="py-3 px-3 text-center space-x-1">
+                        <button onclick="editRepayment('${item.id}')" class="p-1 text-cream-700/50 hover:text-caramel-600 transition" title="編輯"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="confirmDelete('repayment', '${item.id}')" class="p-1 text-cream-700/50 hover:text-rose-600 transition" title="刪除"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.editExpense = function(id) {
+            const item = rawExpenses.find(i => i.id === id);
+            if (!item) return;
+
+            document.getElementById('expenseEditId').value = item.id;
+            document.getElementById('expenseDate').value = item.date;
+            document.getElementById('expensePerson').value = item.person;
+            document.getElementById('expenseCategory').value = item.category;
+            document.getElementById('expenseAmount').value = item.amount;
+            document.getElementById('expenseNote').value = item.note || '';
+
+            document.getElementById('expenseModalTitle').textContent = '編輯代支費用';
+            openModal('addExpenseModal');
+        };
+
+        window.editRepayment = function(id) {
+            const item = rawRepayments.find(i => i.id === id);
+            if (!item) return;
+
+            document.getElementById('repaymentEditId').value = item.id;
+            document.getElementById('repaymentDate').value = item.date;
+            document.getElementById('repaymentPerson').value = item.person;
+            document.getElementById('repaymentAmount').value = item.amount;
+            document.getElementById('repaymentNote').value = item.note || '';
+
+            document.getElementById('repaymentModalTitle').textContent = '編輯收回款項';
+            openModal('addRepaymentModal');
+        };
+
+        function resetExpenseForm() {
+            document.getElementById('expenseForm').reset();
+            document.getElementById('expenseEditId').value = '';
+            document.getElementById('expenseDate').valueAsDate = new Date();
+            document.getElementById('expenseModalTitle').textContent = '新增代支費用';
+        }
+
+        function resetRepaymentForm() {
+            document.getElementById('repaymentForm').reset();
+            document.getElementById('repaymentEditId').value = '';
+            document.getElementById('repaymentDate').valueAsDate = new Date();
+            document.getElementById('repaymentModalTitle').textContent = '新增收回款項';
+        }
+
+        // Export Data to CSV
+        window.exportDataCSV = function() {
+            if (rawExpenses.length === 0 && rawRepayments.length === 0) {
+                showToast("尚無數據可匯出", "error");
+                return;
+            }
+
+            let csvContent = "\uFEFF"; // UTF-8 BOM for Excel Chinese support
+            csvContent += "=== 代支費用明細 ===\n";
+            csvContent += "日期,墊付對象,分類,金額,備註說明,建立者\n";
+
+            rawExpenses.forEach(e => {
+                csvContent += `"${e.date}","${e.person}","${e.category}",${e.amount},"${e.note || ''}","${e.createdBy || ''}"\n`;
+            });
+
+            csvContent += "\n=== 收回款項明細 ===\n";
+            csvContent += "日期,付款人,金額,收款方式/備註,建立者\n";
+
+            rawRepayments.forEach(r => {
+                csvContent += `"${r.date}","${r.person}",${r.amount},"${r.note || ''}","${r.createdBy || ''}"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `代支與收回對帳報表_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast("已成功匯出 CSV 報表", "success");
+        };
+
+        window.openModal = function(id) {
+            document.getElementById(id).classList.remove('hidden');
+        };
+
+        window.closeModal = function(id) {
+            document.getElementById(id).classList.add('hidden');
+            if (id === 'addExpenseModal') resetExpenseForm();
+            if (id === 'addRepaymentModal') resetRepaymentForm();
+        };
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toastNotification');
+            const msgSpan = document.getElementById('toastMessage');
+            const icon = document.getElementById('toastIcon');
+
+            msgSpan.textContent = message;
+
+            if (type === 'success') {
+                icon.className = "fa-solid fa-circle-check text-milktea-300";
+            } else if (type === 'error') {
+                icon.className = "fa-solid fa-circle-xmark text-rose-400";
+            } else {
+                icon.className = "fa-solid fa-circle-info text-caramel-300";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
