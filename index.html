@@ -6,7 +6,7 @@
     <title>代支費用管理系統 - Expense Tracker</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts (Inter + Noto Sans TC) -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -65,7 +65,7 @@
 </head>
 <body class="bg-cream-50 text-cream-800 min-h-screen flex flex-col antialiased pb-20 sm:pb-6">
 
-    <!-- Navigation Header -->
+    <!-- Header -->
     <header class="bg-white/90 backdrop-blur-md border-b border-cream-200 sticky top-0 z-30 shadow-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
@@ -78,7 +78,7 @@
                 </div>
             </div>
 
-            <!-- User Auth Profile Section -->
+            <!-- User Status Area -->
             <div id="authStatusArea" class="flex items-center space-x-3">
                 <div id="userInfo" class="hidden flex items-center space-x-2 bg-cream-100 rounded-full py-1 px-3 border border-cream-200">
                     <img id="userAvatar" class="w-7 h-7 rounded-full border border-white" src="" alt="User Avatar">
@@ -93,15 +93,15 @@
                     登出
                 </button>
 
-                <button onclick="openModal('whitelistModal')" class="text-cream-700 hover:text-milktea-600 p-2 rounded-xl hover:bg-cream-100 transition" title="授權 Email 白名單設定">
+                <button id="btnWhitelistConfig" onclick="openModal('whitelistModal')" class="hidden text-cream-700 hover:text-milktea-600 p-2 rounded-xl hover:bg-cream-100 transition" title="授權 Email 白名單設定">
                     <i class="fa-solid fa-user-shield text-lg"></i>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Navigation Bar -->
-    <nav class="bg-white/80 border-b border-cream-200 sticky top-16 z-20 shadow-xs">
+    <!-- Main Navigation Bar (僅白名單用戶看得到) -->
+    <nav id="mainNavBar" class="hidden bg-white/80 border-b border-cream-200 sticky top-16 z-20 shadow-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-around sm:justify-start sm:space-x-4">
             <button id="navBtnSummary" onclick="switchPage('summary')" class="py-3 px-4 font-bold text-sm text-milktea-600 border-b-2 border-milktea-500 transition flex items-center space-x-2">
                 <i class="fa-solid fa-chart-pie"></i>
@@ -123,215 +123,246 @@
     <!-- Main Content Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <!-- Unauthorized Email Access Warning Box -->
-        <div id="unauthorizedBanner" class="hidden bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-2xl shadow-xs">
-            <div class="flex items-start">
-                <i class="fa-solid fa-triangle-exclamation text-amber-600 text-xl mr-3 mt-0.5"></i>
-                <div>
-                    <h3 class="text-sm font-bold text-amber-900">未受授權存取</h3>
-                    <p class="text-xs text-amber-800 mt-1">目前登入的 Email (<span id="unauthorizedEmail" class="font-mono font-bold"></span>) 未在系統設定的 3 個許可白名單中。請切換授權帳號或點擊右上角盾牌圖示調整白名單設定。</p>
-                </div>
+        <!-- 1. 未授權存取鎖定畫面 (非白名單帳號全螢幕鎖定) -->
+        <div id="unauthorizedAccessView" class="hidden bg-white rounded-3xl p-8 sm:p-12 border border-cream-200 text-center shadow-lg max-w-md mx-auto my-12 space-y-5">
+            <div class="w-20 h-20 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center mx-auto text-3xl shadow-inner">
+                <i class="fa-solid fa-user-xmark"></i>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-cream-900">未獲授權存取</h2>
+                <p class="text-xs text-cream-700/80 mt-2 leading-relaxed">
+                    您目前登入的 Google 帳號：<br>
+                    <span id="unauthorizedEmail" class="font-mono font-bold text-rose-600 break-all text-sm"></span><br>
+                    不在系統白名單內，無法查看任何財務數據。
+                </p>
+            </div>
+            <div class="pt-2">
+                <button onclick="handleLogout()" class="w-full bg-cream-200 hover:bg-cream-300 text-cream-900 font-bold text-xs px-5 py-3 rounded-2xl transition shadow-xs flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>切換授權帳號登出</span>
+                </button>
             </div>
         </div>
 
-        <!-- PAGE 1: 結欠總覽 -->
-        <div id="pageSummary" class="space-y-6">
-            <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-white rounded-2xl p-5 border border-cream-200/80 shadow-xs relative overflow-hidden">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-xs font-semibold text-cream-700/60 uppercase tracking-wider">歷史代支總額</p>
-                            <h3 id="metricTotalExpense" class="text-2xl font-bold text-cream-900 mt-1">$0.00</h3>
+        <!-- 2. 請先登入畫面 (未登入時全螢幕鎖定) -->
+        <div id="loggedOutView" class="hidden bg-white rounded-3xl p-8 sm:p-12 border border-cream-200 text-center shadow-lg max-w-md mx-auto my-12 space-y-5">
+            <div class="w-20 h-20 bg-milktea-100 text-milktea-600 rounded-full flex items-center justify-center mx-auto text-3xl shadow-inner">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-cream-900">請先登入帳號</h2>
+                <p class="text-xs text-cream-700/70 mt-1">此系統為私人代支費用管理工具，僅限授權用戶存取。</p>
+            </div>
+            <button onclick="handleGoogleLogin()" class="w-full bg-milktea-500 hover:bg-milktea-600 text-white font-semibold py-3 px-4 rounded-2xl transition flex items-center justify-center space-x-2 shadow-sm">
+                <i class="fa-brands fa-google text-lg"></i>
+                <span>使用 Google 帳號登入</span>
+            </button>
+        </div>
+
+        <!-- 3. 主系統內容 (僅授權白名單用戶看得到) -->
+        <div id="authorizedAppContent" class="hidden space-y-6">
+
+            <!-- PAGE 1: 結欠總覽 -->
+            <div id="pageSummary" class="space-y-6">
+                <!-- 數據概覽卡片 -->
+                <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white rounded-2xl p-5 border border-cream-200/80 shadow-xs relative overflow-hidden">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold text-cream-700/70 uppercase tracking-wider">歷史代支總額</p>
+                                <h3 id="metricTotalExpense" class="text-3xl font-extrabold text-cream-900 mt-1">$0.00</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-milktea-100 text-milktea-600 flex items-center justify-center">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </div>
                         </div>
-                        <div class="w-10 h-10 rounded-xl bg-milktea-50 text-milktea-600 flex items-center justify-center">
-                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        <p class="text-xs text-cream-700/70 mt-3 flex items-center">
+                            <span id="metricExpenseCount" class="font-semibold text-cream-900 mr-1">0</span> 筆代支記錄
+                        </p>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-5 border border-cream-200/80 shadow-xs relative overflow-hidden">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold text-cream-700/70 uppercase tracking-wider">歷史收回總額</p>
+                                <h3 id="metricTotalRepaid" class="text-3xl font-extrabold text-caramel-600 mt-1">$0.00</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-caramel-100 text-caramel-600 flex items-center justify-center">
+                                <i class="fa-solid fa-arrow-down-left-and-arrow-up-right-to-center"></i>
+                            </div>
+                        </div>
+                        <p class="text-xs text-cream-700/70 mt-3 flex items-center">
+                            <span id="metricRepaidCount" class="font-semibold text-cream-900 mr-1">0</span> 筆收款記錄
+                        </p>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-milktea-600 to-milktea-800 text-cream-50 rounded-2xl p-5 shadow-xs relative overflow-hidden">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold text-milktea-200 uppercase tracking-wider">當前累積未結欠款</p>
+                                <h3 id="metricNetBalance" class="text-3xl font-extrabold mt-1">$0.00</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-white/10 text-cream-50 flex items-center justify-center backdrop-blur-sm">
+                                <i class="fa-solid fa-scale-balanced"></i>
+                            </div>
+                        </div>
+                        <p id="metricNetStatusText" class="text-xs text-milktea-100 mt-3">
+                            無未結欠款
+                        </p>
+                    </div>
+                </section>
+
+                <section class="bg-white rounded-2xl border border-cream-200/80 shadow-xs p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-users text-milktea-500"></i>
+                            <h2 class="font-bold text-cream-900 text-base">個人/對象結欠匯總</h2>
+                        </div>
+                        <span class="text-xs text-cream-700/60">點擊卡片可快速篩選明細</span>
+                    </div>
+
+                    <div id="personSummaryGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <div class="col-span-full text-center py-6 text-cream-700/50 text-sm">
+                            尚無個人帳目記錄，請點擊下方新增第一筆代支費用。
                         </div>
                     </div>
-                    <p class="text-xs text-cream-700/70 mt-3 flex items-center">
-                        <span id="metricExpenseCount" class="font-semibold text-cream-900 mr-1">0</span> 筆代支記錄
-                    </p>
-                </div>
+                </section>
 
-                <div class="bg-white rounded-2xl p-5 border border-cream-200/80 shadow-xs relative overflow-hidden">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-xs font-semibold text-cream-700/60 uppercase tracking-wider">歷史收回總額</p>
-                            <h3 id="metricTotalRepaid" class="text-2xl font-bold text-caramel-600 mt-1">$0.00</h3>
-                        </div>
-                        <div class="w-10 h-10 rounded-xl bg-caramel-50 text-caramel-600 flex items-center justify-center">
-                            <i class="fa-solid fa-arrow-down-left-to-square"></i>
-                        </div>
-                    </div>
-                    <p class="text-xs text-cream-700/70 mt-3 flex items-center">
-                        <span id="metricRepaidCount" class="font-semibold text-cream-900 mr-1">0</span> 筆收款記錄
-                    </p>
-                </div>
-
-                <div class="bg-gradient-to-br from-milktea-600 to-milktea-800 text-cream-50 rounded-2xl p-5 shadow-xs relative overflow-hidden">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-xs font-semibold text-milktea-200 uppercase tracking-wider">當前累積未結欠款</p>
-                            <h3 id="metricNetBalance" class="text-3xl font-extrabold mt-1">$0.00</h3>
-                        </div>
-                        <div class="w-10 h-10 rounded-xl bg-white/10 text-cream-50 flex items-center justify-center backdrop-blur-sm">
-                            <i class="fa-solid fa-scale-balanced"></i>
-                        </div>
-                    </div>
-                    <p id="metricNetStatusText" class="text-xs text-milktea-100 mt-3">
-                        無未結欠款
-                    </p>
-                </div>
-            </section>
-
-            <section class="bg-white rounded-2xl border border-cream-200/80 shadow-xs p-5">
-                <div class="flex items-center justify-between mb-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-cream-200/80 shadow-xs">
                     <div class="flex items-center space-x-2">
-                        <i class="fa-solid fa-users text-milktea-500"></i>
-                        <h2 class="font-bold text-cream-900 text-base">個人/對象結欠匯總</h2>
+                        <button onclick="openModal('addExpenseModal')" class="bg-milktea-500 hover:bg-milktea-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition flex items-center shadow-xs">
+                            <i class="fa-solid fa-plus mr-2"></i> 新增代支費用
+                        </button>
+                        <button onclick="openModal('addRepaymentModal')" class="bg-caramel-600 hover:bg-caramel-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition flex items-center shadow-xs">
+                            <i class="fa-solid fa-hand-holding-dollar mr-2"></i> 新增收回款項
+                        </button>
                     </div>
-                    <span class="text-xs text-cream-700/60">點擊人名可快速前往明細頁面</span>
-                </div>
 
-                <div id="personSummaryGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    <div class="col-span-full text-center py-6 text-cream-700/50 text-sm">
-                        尚無個人帳目記錄，請點擊下方新增第一筆代支費用。
+                    <div class="flex items-center space-x-2">
+                        <button onclick="exportDataCSV()" class="bg-cream-100 border border-cream-200 text-cream-800 hover:bg-cream-200 text-xs font-semibold px-3.5 py-2.5 rounded-xl transition flex items-center shadow-xs">
+                            <i class="fa-solid fa-file-csv text-milktea-600 mr-1.5"></i> 匯出報表 (CSV)
+                        </button>
                     </div>
                 </div>
-            </section>
+            </div>
 
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-cream-200/80 shadow-xs">
-                <div class="flex items-center space-x-2">
-                    <button onclick="openModal('addExpenseModal')" class="bg-milktea-500 hover:bg-milktea-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition flex items-center shadow-xs">
-                        <i class="fa-solid fa-plus mr-2"></i> 新增代支費用
+            <!-- PAGE 2: 代支費用明細頁面 -->
+            <div id="pageExpense" class="hidden space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-cream-200/80 shadow-xs">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-receipt text-milktea-500 text-xl"></i>
+                        <div>
+                            <h2 class="font-bold text-cream-900 text-base">代支費用明細表</h2>
+                            <p class="text-xs text-cream-700/60">所有幫他人代刷、代付的歷史費用紀錄</p>
+                        </div>
+                    </div>
+                    <button onclick="openModal('addExpenseModal')" class="bg-milktea-500 hover:bg-milktea-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition flex items-center shadow-xs self-start sm:self-auto">
+                        <i class="fa-solid fa-plus mr-1.5"></i> 新增代支
                     </button>
-                    <button onclick="openModal('addRepaymentModal')" class="bg-caramel-600 hover:bg-caramel-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition flex items-center shadow-xs">
-                        <i class="fa-solid fa-hand-holding-dollar mr-2"></i> 新增收回款項
+                </div>
+
+                <div class="bg-white rounded-2xl border border-cream-200/80 shadow-xs p-4 space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-cream-50 p-3 rounded-xl border border-cream-200/60">
+                        <div>
+                            <label class="block text-xs font-semibold text-cream-700 mb-1">對象篩選</label>
+                            <select id="filterExpensePerson" onchange="applyExpenseFilters()" class="w-full text-xs bg-white border border-cream-200 rounded-lg p-2 focus:ring-2 focus:ring-milktea-500 text-cream-800">
+                                <option value="">全部對象</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-cream-700 mb-1">費用分類篩選</label>
+                            <select id="filterExpenseCategory" onchange="applyExpenseFilters()" class="w-full text-xs bg-white border border-cream-200 rounded-lg p-2 focus:ring-2 focus:ring-milktea-500 text-cream-800">
+                                <option value="">全部分類</option>
+                                <option value="信用卡">信用卡代刷</option>
+                                <option value="電費/水費/網速">電費/水費/網速</option>
+                                <option value="房屋租金">房屋租金</option>
+                                <option value="餐費">餐費</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-cream-700 mb-1">月份篩選</label>
+                            <input type="month" id="filterExpenseMonth" onchange="applyExpenseFilters()" class="w-full text-xs bg-white border border-cream-200 rounded-lg p-2 focus:ring-2 focus:ring-milktea-500 text-cream-800">
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse min-w-[600px]">
+                            <thead>
+                                <tr class="text-xs font-semibold text-cream-700/60 border-b border-cream-100">
+                                    <th class="py-3 px-3">日期</th>
+                                    <th class="py-3 px-3">對象 (墊付對象)</th>
+                                    <th class="py-3 px-3">分類</th>
+                                    <th class="py-3 px-3 text-right">金額</th>
+                                    <th class="py-3 px-3">備註說明</th>
+                                    <th class="py-3 px-3 text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expenseTableBody" class="text-xs text-cream-800 divide-y divide-cream-100">
+                                <tr>
+                                    <td colspan="6" class="text-center py-8 text-cream-700/50">讀取中或尚無資料...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE 3: 收回金額明細頁面 -->
+            <div id="pageRepayment" class="hidden space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-cream-200/80 shadow-xs">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-hand-holding-dollar text-caramel-600 text-xl"></i>
+                        <div>
+                            <h2 class="font-bold text-cream-900 text-base">收回金額明細表</h2>
+                            <p class="text-xs text-cream-700/60">所有從他人收回/款項還清的紀錄</p>
+                        </div>
+                    </div>
+                    <button onclick="openModal('addRepaymentModal')" class="bg-caramel-600 hover:bg-caramel-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition flex items-center shadow-xs self-start sm:self-auto">
+                        <i class="fa-solid fa-plus mr-1.5"></i> 新增收回
                     </button>
                 </div>
 
-                <div class="flex items-center space-x-2">
-                    <button onclick="exportDataCSV()" class="bg-cream-100 border border-cream-200 text-cream-800 hover:bg-cream-200 text-xs font-semibold px-3.5 py-2.5 rounded-xl transition flex items-center shadow-xs">
-                        <i class="fa-solid fa-file-csv text-milktea-600 mr-1.5"></i> 匯出報表 (CSV)
-                    </button>
+                <div class="bg-white rounded-2xl border border-cream-200/80 shadow-xs p-4 space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-cream-50 p-3 rounded-xl border border-cream-200/60">
+                        <div>
+                            <label class="block text-xs font-semibold text-cream-700 mb-1">付款人篩選</label>
+                            <select id="filterRepaymentPerson" onchange="applyRepaymentFilters()" class="w-full text-xs bg-white border border-cream-200 rounded-lg p-2 focus:ring-2 focus:ring-caramel-500 text-cream-800">
+                                <option value="">全部付款人</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-cream-700 mb-1">月份篩選</label>
+                            <input type="month" id="filterRepaymentMonth" onchange="applyRepaymentFilters()" class="w-full text-xs bg-white border border-cream-200 rounded-lg p-2 focus:ring-2 focus:ring-caramel-500 text-cream-800">
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse min-w-[500px]">
+                            <thead>
+                                <tr class="text-xs font-semibold text-cream-700/60 border-b border-cream-100">
+                                    <th class="py-3 px-3">日期</th>
+                                    <th class="py-3 px-3">付款人 (從誰收回)</th>
+                                    <th class="py-3 px-3 text-right">收回金額</th>
+                                    <th class="py-3 px-3">收款方式 / 備註</th>
+                                    <th class="py-3 px-3 text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="repaymentTableBody" class="text-xs text-cream-800 divide-y divide-cream-100">
+                                <tr>
+                                    <td colspan="5" class="text-center py-8 text-cream-700/50">讀取中或尚無資料...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- PAGE 2: 代支費用明細頁面 -->
-        <div id="pageExpense" class="hidden space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-cream-200/80 shadow-xs">
-                <div class="flex items-center space-x-2">
-                    <i class="fa-solid fa-receipt text-milktea-500 text-xl"></i>
-                    <div>
-                        <h2 class="font-bold text-cream-900 text-base">代支費用明細表</h2>
-                        <p class="text-xs text-cream-700/60">所有幫他人代刷、代付的歷史費用紀錄</p>
-                    </div>
-                </div>
-                <button onclick="openModal('addExpenseModal')" class="bg-milktea-500 hover:bg-milktea-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition flex items-center shadow-xs self-start sm:self-auto">
-                    <i class="fa-solid fa-plus mr-1.5"></i> 新增代支
-                </button>
-            </div>
-
-            <div class="bg-white rounded-2xl border border-cream-200/80 shadow-xs p-4 space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-cream-50 p-3 rounded-xl border border-cream-200/60">
-                    <div>
-                        <label class="block text-xs font-semibold text-cream-700 mb-1">對象篩選</label>
-                        <select id="filterExpensePerson" onchange="applyExpenseFilters()" class="w-full text-xs bg-white border border-cream-200 rounded-lg p-2 focus:ring-2 focus:ring-milktea-500 text-cream-800">
-                            <option value="">全部對象</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-cream-700 mb-1">費用分類篩選</label>
-                        <select id="filterExpenseCategory" onchange="applyExpenseFilters()" class="w-full text-xs bg-white border border-cream-200 rounded-lg p-2 focus:ring-2 focus:ring-milktea-500 text-cream-800">
-                            <option value="">全部分類</option>
-                            <option value="信用卡">信用卡代刷</option>
-                            <option value="電費/水費/網速">電費/水費/網速</option>
-                            <option value="房屋租金">房屋租金</option>
-                            <option value="餐費">餐費</option>
-                            <option value="其他">其他</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-cream-700 mb-1">月份篩選</label>
-                        <input type="month" id="filterExpenseMonth" onchange="applyExpenseFilters()" class="w-full text-xs bg-white border border-cream-200 rounded-lg p-2 focus:ring-2 focus:ring-milktea-500 text-cream-800">
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto custom-scrollbar">
-                    <table class="w-full text-left border-collapse min-w-[600px]">
-                        <thead>
-                            <tr class="text-xs font-semibold text-cream-700/60 border-b border-cream-100">
-                                <th class="py-3 px-3">日期</th>
-                                <th class="py-3 px-3">對象 (墊付對象)</th>
-                                <th class="py-3 px-3">分類</th>
-                                <th class="py-3 px-3 text-right">金額</th>
-                                <th class="py-3 px-3">備註說明</th>
-                                <th class="py-3 px-3 text-center">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="expenseTableBody" class="text-xs text-cream-800 divide-y divide-cream-100">
-                            <tr>
-                                <td colspan="6" class="text-center py-8 text-cream-700/50">讀取中或尚無資料...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- PAGE 3: 收回金額明細頁面 -->
-        <div id="pageRepayment" class="hidden space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-cream-200/80 shadow-xs">
-                <div class="flex items-center space-x-2">
-                    <i class="fa-solid fa-hand-holding-dollar text-caramel-600 text-xl"></i>
-                    <div>
-                        <h2 class="font-bold text-cream-900 text-base">收回金額明細表</h2>
-                        <p class="text-xs text-cream-700/60">所有從他人收回/款項還清的紀錄</p>
-                    </div>
-                </div>
-                <button onclick="openModal('addRepaymentModal')" class="bg-caramel-600 hover:bg-caramel-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition flex items-center shadow-xs self-start sm:self-auto">
-                    <i class="fa-solid fa-plus mr-1.5"></i> 新增收回
-                </button>
-            </div>
-
-            <div class="bg-white rounded-2xl border border-cream-200/80 shadow-xs p-4 space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-cream-50 p-3 rounded-xl border border-cream-200/60">
-                    <div>
-                        <label class="block text-xs font-semibold text-cream-700 mb-1">付款人篩選</label>
-                        <select id="filterRepaymentPerson" onchange="applyRepaymentFilters()" class="w-full text-xs bg-white border border-cream-200 rounded-lg p-2 focus:ring-2 focus:ring-caramel-500 text-cream-800">
-                            <option value="">全部付款人</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-cream-700 mb-1">月份篩選</label>
-                        <input type="month" id="filterRepaymentMonth" onchange="applyRepaymentFilters()" class="w-full text-xs bg-white border border-cream-200 rounded-lg p-2 focus:ring-2 focus:ring-caramel-500 text-cream-800">
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto custom-scrollbar">
-                    <table class="w-full text-left border-collapse min-w-[500px]">
-                        <thead>
-                            <tr class="text-xs font-semibold text-cream-700/60 border-b border-cream-100">
-                                <th class="py-3 px-3">日期</th>
-                                <th class="py-3 px-3">付款人 (從誰收回)</th>
-                                <th class="py-3 px-3 text-right">收回金額</th>
-                                <th class="py-3 px-3">收款方式 / 備註</th>
-                                <th class="py-3 px-3 text-center">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="repaymentTableBody" class="text-xs text-cream-800 divide-y divide-cream-100">
-                            <tr>
-                                <td colspan="5" class="text-center py-8 text-cream-700/50">讀取中或尚無資料...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
     </main>
 
-    <!-- Mobile Bottom Navigation Bar -->
-    <nav class="sm:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-cream-200 z-40 flex justify-around items-center h-16 shadow-lg px-2">
+    <!-- Mobile Bottom Navigation Bar (僅白名單用戶看得到) -->
+    <nav id="mobileNavBar" class="hidden sm:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-cream-200 z-40 flex justify-around items-center h-16 shadow-lg px-2">
         <button id="mobileNavSummary" onclick="switchPage('summary')" class="flex flex-col items-center justify-center w-full h-full text-milktea-600 font-bold transition">
             <i class="fa-solid fa-chart-pie text-lg"></i>
             <span class="text-[10px] mt-1">結欠總覽</span>
@@ -443,7 +474,7 @@
                 <i class="fa-solid fa-user-shield text-milktea-500 mr-2"></i>
                 <span>授權用戶白名單 (最多 3 個 Google Email)</span>
             </h3>
-            <p class="text-xs text-cream-700/70">僅有列在下方白名單內的 Google Email 帳號可存取、閱讀與寫入此 Web App 資料。</p>
+            <p class="text-xs text-cream-700/70">僅有列在下方白名單內的 Google Email 帳號可存取與查看此 Web App 資料。</p>
 
             <div class="space-y-2 py-2">
                 <div class="flex items-center space-x-2">
@@ -459,9 +490,9 @@
 
             <div class="bg-cream-50 p-3 rounded-xl border border-cream-200/60 text-xs text-cream-700 space-y-1">
                 <p class="font-bold text-cream-900">💡 後端 Security Rules 指引：</p>
-                <p>將 Email 貼入 Firestore 安全規則（Security Rules）：</p>
+                <p>請將相同的 Email 填入 Firestore 安全規則（Security Rules）：</p>
                 <code class="block bg-cream-900 text-milktea-300 p-2 rounded text-[10px] font-mono overflow-x-auto">
-                    allow read, write: if request.auth.token.email in ['candicefft@gmail.com', 'fmyingmoon@gmail.com', 'email3@gmail.com'];
+                    allow read, write: if request.auth.token.email in ['candicefft@gmail.com', 'email2@gmail.com', 'email3@gmail.com'];
                 </code>
             </div>
 
@@ -487,13 +518,13 @@
         </div>
     </div>
 
-    <!-- Custom Notification Toast -->
+    <!-- Toast Notification -->
     <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-cream-900 text-cream-50 text-xs font-medium px-4 py-3 rounded-xl shadow-lg flex items-center space-x-2 border border-milktea-700">
         <i id="toastIcon" class="fa-solid fa-circle-check text-milktea-300"></i>
         <span id="toastMessage">已儲存成功</span>
     </div>
 
-    <!-- Firebase Standard JS SDK -->
+    <!-- Firebase JS SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
@@ -518,7 +549,7 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'expense-tracker-app';
         
         const defaultFirebaseConfig = {
-                apiKey: "AIzaSyALBzhPcvwOdWsQ_NfrrD7u9zGP7QaWYdc",
+            apiKey: "AIzaSyALBzhPcvwOdWsQ_NfrrD7u9zGP7QaWYdc",
     authDomain: "my-expense-tracker-bd4fa.firebaseapp.com",
     projectId: "my-expense-tracker-bd4fa",
     storageBucket: "my-expense-tracker-bd4fa.firebasestorage.app",
@@ -534,7 +565,7 @@
         const db = getFirestore(app);
         const googleProvider = new GoogleAuthProvider();
 
-        // Application State - Updated default whitelist with user's email
+        // Application State
         let currentUser = null;
         let whitelistEmails = ["candicefft@gmail.com"];
         let rawExpenses = [];
@@ -564,19 +595,50 @@
                 currentUser = user;
                 updateAuthUI(user);
 
-                if (user) {
-                    const userEmail = user.email ? user.email.toLowerCase() : '';
-                    const isAuthorized = whitelistEmails.length === 0 || whitelistEmails.some(e => e.trim().toLowerCase() === userEmail);
+                const appContent = document.getElementById('authorizedAppContent');
+                const loggedOutView = document.getElementById('loggedOutView');
+                const unauthorizedView = document.getElementById('unauthorizedAccessView');
+                const mainNavBar = document.getElementById('mainNavBar');
+                const mobileNavBar = document.getElementById('mobileNavBar');
+                const btnWhitelistConfig = document.getElementById('btnWhitelistConfig');
 
-                    if (!isAuthorized && user.email) {
-                        document.getElementById('unauthorizedBanner').classList.remove('hidden');
+                if (user) {
+                    loggedOutView.classList.add('hidden');
+                    const userEmail = user.email ? user.email.trim().toLowerCase() : '';
+                    
+                    // 嚴格比對 Email 白名單
+                    const isAuthorized = whitelistEmails.some(e => e.trim().toLowerCase() === userEmail);
+
+                    if (!isAuthorized) {
+                        // ⛔ 非白名單用戶：全面隱藏導航列與主數據內容，強行鎖定
+                        appContent.classList.add('hidden');
+                        mainNavBar.classList.add('hidden');
+                        mobileNavBar.classList.add('hidden');
+                        btnWhitelistConfig.classList.add('hidden');
+                        
+                        unauthorizedView.classList.remove('hidden');
                         document.getElementById('unauthorizedEmail').textContent = user.email;
                     } else {
-                        document.getElementById('unauthorizedBanner').classList.add('hidden');
+                        // ✅ 授權白名單用戶：顯示所有功能與數據
+                        unauthorizedView.classList.add('hidden');
+                        
+                        appContent.classList.remove('hidden');
+                        mainNavBar.classList.remove('hidden');
+                        mobileNavBar.classList.remove('hidden');
+                        btnWhitelistConfig.classList.remove('hidden');
+                        
+                        setupFirestoreListeners();
                     }
-
-                    setupFirestoreListeners();
                 } else {
+                    // 🔒 未登入用戶：全螢幕鎖定顯示登入提示
+                    appContent.classList.add('hidden');
+                    mainNavBar.classList.add('hidden');
+                    mobileNavBar.classList.add('hidden');
+                    unauthorizedView.classList.add('hidden');
+                    btnWhitelistConfig.classList.add('hidden');
+                    
+                    loggedOutView.classList.remove('hidden');
+
                     rawExpenses = [];
                     rawRepayments = [];
                     renderAllViews();
@@ -761,17 +823,7 @@
 
             showToast("白名單已更新！", "success");
             closeModal('whitelistModal');
-
-            if (currentUser && currentUser.email) {
-                const userEmail = currentUser.email.toLowerCase();
-                const isAuthorized = whitelistEmails.some(e => e.trim().toLowerCase() === userEmail);
-                if (!isAuthorized) {
-                    document.getElementById('unauthorizedBanner').classList.remove('hidden');
-                    document.getElementById('unauthorizedEmail').textContent = currentUser.email;
-                } else {
-                    document.getElementById('unauthorizedBanner').classList.add('hidden');
-                }
-            }
+            location.reload();
         };
 
         function loadWhitelistFromLocal() {
